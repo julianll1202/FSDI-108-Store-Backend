@@ -1,0 +1,20 @@
+# pip as the package manager for python projects
+
+# installed venv with:
+    # py -m pip install virtualenv
+
+# create a venv
+    # py -m venv venv
+
+# activate venv
+    # venv\Scripts\activate (Windows)
+    # source venv/bin/activate (MacOS)
+
+# deactivate venv
+    # deactivate
+
+# install flask
+    # py -m pip install flask
+
+# run server
+    # py fileName.py
