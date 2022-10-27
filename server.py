@@ -1,8 +1,8 @@
 # Import the Flask class from the flask library
 from winreg import HKEY_LOCAL_MACHINE
-from flask import Flask #external dependency
+from flask import Flask, abort, request #external dependency
 import json #internal dependency
-from config import me, hello
+from config import me, db
 from mock_data import catalog
 
 # Create a new app
@@ -34,28 +34,64 @@ def version():
         "name": "Vainilla",
         "developer": me
     }
-    hello()
     return json.dumps(v)
+
+def fix_id(obj):
+    obj["_id"] = str(obj["_id"])
+    return obj
 
 # get /api/catalog
 @app.get("/api/catalog")
 # return catalog as json
 def catalogue():
-    return json.dumps(catalog)
+    cursor = db.products.find({})
+    results = []
+
+    for prod in cursor:
+        results.append(fix_id(prod))
+    
+    return json.dumps(results)
+
+@app.post("/api/catalog")
+def save_product():
+    product = request.get_json()
+
+    if product is None:
+        return abort(400, "Product required")
+    # Validate price, title, etc
+
+    # database.collectioName.insert_one()
+    db.products.insert_one(product)
+    print("-----------------------------")
+    print(product)
+    print("-----------------------------")
+
+    # Changes the object id to something manageable by
+    # the Python server
+    product["_id"] = str(product["_id"])
+
+    return json.dumps(product)
 
 # get /api/products/count
 # return the number of products in catalog
 @app.get("/api/products/count")
 def product_count():
-    return json.dumps(len(catalog))
+    # A more efficient way
+    count = db.products.count_documents({})
+    
+    # get the length of the list
+    return json.dumps(count)
 
 # get /api/products/total
 # return the sum of all the prices
 @app.get("/api/products/total")
 def product_total():
     total=0
-    for product in catalog:
-        total += product["price"]
+    # cursor with the products
+    cursor = db.products.find({})
+    # travel the cursor
+    for prod in cursor:
+        total += prod["price"]
 
     return json.dumps(total) 
 
