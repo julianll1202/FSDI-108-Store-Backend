@@ -46,9 +46,11 @@ def fix_id(obj):
     obj["_id"] = str(obj["_id"])
     return obj
 
+
+##################################################
+#               PRODUCT ENDPOINTS                #
+##################################################
 # get /api/catalog
-
-
 @app.get("/api/catalog")
 # return catalog as json
 def catalogue():
@@ -67,8 +69,25 @@ def save_product():
 
     if product is None:
         return abort(400, "Product required")
-    # Validate price, title, etc
+    # Validations
+    # Title validations
+    if not "title" in product or len(product["title"]) < 5:
+        return abort(400, "Product title not found or too short!")
 
+    # Price validations
+    if not "price" in product:
+        return abort(400, "Product price not found!")
+
+    if (not isinstance(product["price"], float)) and not isinstance(product["price"], int):
+        return abort(400, "Price value must be a number")
+
+    if(product["price"] <= 0):
+        return abort(400, "Price value must be greater than 0")
+
+    # Category validations
+    if not "category" in product:
+        return abort(400, "Product category not found!")
+    
     # database.collectioName.insert_one()
     db.products.insert_one(product)
     print("-----------------------------")
@@ -186,6 +205,74 @@ def find_product(id):
         return json.dumps(fix_id(prod))
 
     return abort(404, "Product not found")
+
+##################################################
+#               COUPON ENDPOINTS                 #
+##################################################
+
+# create a POST request on /api/coupons
+# receives an object with code and discount
+@app.post("/api/coupons")
+def save_coupon():
+    coupon = request.get_json()
+
+    if coupon is None:
+        return abort(400, "Coupon required")
+
+    # coupon code validation
+    if not "code" in coupon:
+        return abort(400, "Missing coupon code!")
+
+    # coupon value validation
+    if not "discount" in coupon:
+        return abort(400, "Missing discount value!")
+
+    if (not isinstance(coupon["discount"], float)) and not isinstance(coupon["discount"], int):
+        return abort(400, "Discount value must be a number")
+    
+    coupon["code"] = coupon["code"].upper()
+
+    # database.collectionName.insert_one()
+    db.coupons.insert_one(coupon)
+    print("-----------------------------")
+    print(coupon)
+    print("-----------------------------")
+
+    # Changes the name of the category to lower case
+    coupon["code"] = coupon["code"].upper()
+    # Changes the object id to something manageable by
+    # the Python server
+    coupon["_id"] = str(coupon["_id"])
+
+    return json.dumps(coupon)
+
+# shows all the coupons
+@app.get("/api/coupons")
+def get_coupons():
+    cursor = db.coupons.find({})
+    results = []
+
+    for coupon in cursor:
+        results.append(fix_id(coupon))
+    
+    return json.dumps(results)
+
+# retrieves a coupon by its code
+@app.get("/api/coupons/details/<code>")
+def find_coupon(code):
+    res = db.coupons.find_one({"code": code})
+
+    if res:
+        return json.dumps(fix_id(res))
+
+    return abort(404, "Code not found")
+# deletes coupon code
+@app.delete("/api/coupons/<id>")
+def delete_coupon(id):
+    res = db.coupons.delete_one({"_id":ObjectId(id)})
+    return json.dumps({"count": res.deleted_count})
+
+
 # @app.get("/api/test/colors")
 # def unique_color():
 #     colors = ["red", 'blue', "Pink", "yelloW", "Red",
@@ -216,5 +303,5 @@ def find_product(id):
 
 
 # run the app in debug mode
-app.run(debug=True)
+# app.run(debug=True)
 # When in production, turn off debug mode
