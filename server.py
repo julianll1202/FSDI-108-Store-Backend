@@ -4,9 +4,11 @@ import json  # internal dependency
 from config import me, db
 from mock_data import catalog
 from bson import ObjectId
+from flask_cors import CORS
+
 # Create a new app
 app = Flask("Server")
-
+CORS(app) #disabes CORS, **Remember to enable it on production stage**
 # When you receive a get request at the root endpoint
 # execute the home function
 
@@ -26,8 +28,8 @@ def about():
     return "Julian Lopez"
 
 ##################################################
-#               API ENDPOINTS
-# From this point, you will only work with json
+#               API ENDPOINTS                    #
+# From this point, you will only work with json  #
 ##################################################
 
 
